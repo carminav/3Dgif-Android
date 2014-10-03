@@ -24,16 +24,6 @@ public class Main extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-
-		View decorView = getWindow().getDecorView();
-
-		// Hide the status bar.
-		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-		decorView.setSystemUiVisibility(uiOptions);
-
-		// Hide action bar
-		ActionBar actionBar = getActionBar();
-
 		setContentView(R.layout.activity_main);
 		
 		cameraProgressBar = (ProgressBar) findViewById(R.id.camera_progress_bar);
@@ -45,10 +35,25 @@ public class Main extends ActionBarActivity {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-	    
+
 	}
-	
-	
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+
+		View decorView = getWindow().getDecorView();
+
+		// Hide the status bar.
+		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+		decorView.setSystemUiVisibility(uiOptions);
+
+		// Hide action bar
+		ActionBar actionBar = getActionBar();
+		actionBar.hide();
+
+	}
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
