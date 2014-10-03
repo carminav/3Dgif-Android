@@ -9,10 +9,9 @@
     >
 
     <ImageView
-        android:id="@+id/splash_logo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="180dp"
-        android:src="@drawable/ic_launcher" />
+        android:id="@+id/splash_background"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:src="@drawable/splash" />
 
 </LinearLayout>

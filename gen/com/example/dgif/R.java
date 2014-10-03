@@ -1081,6 +1081,7 @@ containing a value of this type.
         public static final int abc_textfield_searchview_right_holo_light=0x7f020056;
         public static final int camera_logo=0x7f020057;
         public static final int ic_launcher=0x7f020058;
+        public static final int splash=0x7f020059;
     }
     public static final class id {
         public static final int action_bar=0x7f05001c;
@@ -1137,7 +1138,7 @@ containing a value of this type.
         public static final int showCustom=0x7f050007;
         public static final int showHome=0x7f050004;
         public static final int showTitle=0x7f050006;
-        public static final int splash_logo=0x7f05003d;
+        public static final int splash_background=0x7f05003d;
         public static final int split_action_bar=0x7f05001e;
         public static final int submit_area=0x7f050039;
         public static final int tabMode=0x7f050002;

@@ -14,7 +14,7 @@ import android.view.View;
  */
 public class Splash extends ActionBarActivity {
 
-	private static int SPLASH_TIME_OUT = 3000;
+	private static int SPLASH_TIME_OUT = 4000;
 	private static final String DEBUG_TAG = "Splash";
 	
 	private boolean active = true;
