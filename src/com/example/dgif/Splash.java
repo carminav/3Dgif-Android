@@ -4,9 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.View;
 
 /* @author Carmina Villaflores
@@ -19,14 +17,13 @@ public class Splash extends ActionBarActivity {
 	
 	private boolean active = true;
 	
-	/*Necessary so that the setSystemUiVisibility() call compiles */
+
 	@SuppressLint("NewApi") 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
-		
-		
+
 		setContentView(R.layout.activity_splash);
 		
 	    // Switch to next activity after SPLASH_TIME_OUT
@@ -45,7 +42,7 @@ public class Splash extends ActionBarActivity {
 					//do nothing
 				} finally {
 					finish();
-					startActivity(new Intent(Splash.this, Main.class));
+					startActivity(new Intent(Splash.this, Preview.class));
 				}
 			}
 		};
@@ -67,6 +64,7 @@ public class Splash extends ActionBarActivity {
 		// Hide action bar
 		ActionBar actionBar = getActionBar();
 		actionBar.hide();
+		
 
     }
     
@@ -76,6 +74,9 @@ public class Splash extends ActionBarActivity {
     	overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 
     }
+    
+    
+    
     
    
 
