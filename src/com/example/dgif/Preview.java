@@ -91,11 +91,8 @@ public class Preview extends Activity {
 			public boolean onTouch(View v, MotionEvent event) {
 				Log.i(DEBUG_TAG, "view touched");
 				
-				//do autofocus
+				//take picture
 			
-				if (mIsPreviewing) {
-					
-				}
 				
 				return false;
 			}
@@ -210,9 +207,9 @@ public class Preview extends Activity {
 			//TODO: surfaceChange causes bug because camera becomes null
 			//shut down current preview
 			stopPreview();
-			mCamera.stopPreview();
+
 			
-			setCameraParameters(width, height);
+			
 			
 			//start preview
 			startPreview(mHolder);
@@ -251,8 +248,9 @@ public class Preview extends Activity {
 				tmpWidth = bestSize.height;
 				tmpHeight = bestSize.width;
 			}
-
+			
 			List<Camera.Size> supportedSizes = p.getSupportedPreviewSizes();
+			
 			
 			//p.setPreviewSize(tmpWidth, tmpHeight);
 			Log.d(DEBUG_TAG, "width: " + supportedSizes.get(2).width + " height: " + supportedSizes.get(2).height);
@@ -318,14 +316,39 @@ public class Preview extends Activity {
 	
 	private void startPreview(final SurfaceHolder mHolder) {
 		
+
+		
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
+				
+				
+				if (mCamera == null) {
+					try {
+						mCamera = Camera.open();
+					} catch (RuntimeException e) {
+						Log.d(DEBUG_TAG, "camera wont open. start prev");
+					}
+				}
+				
 				if (mCamera != null && !mIsPreviewing) {
 					try {
 						
 						
+						Camera.Parameters p = mCamera.getParameters();
+						List<Camera.Size> supportedSizes = p.getSupportedPreviewSizes();
+						
+						
+						//p.setPreviewSize(tmpWidth, tmpHeight);
+						Log.d(DEBUG_TAG, "width: " + supportedSizes.get(2).width + " height: " + supportedSizes.get(2).height);
+						p.setPreviewSize(supportedSizes.get(1).width, supportedSizes.get(1).height);
+						
+						mCamera.setParameters(p);
+						
+						mSensorManager.registerListener(afListenerCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+						
+						mCamera.setDisplayOrientation(90);
 						mCamera.setPreviewDisplay(mHolder);
 						mCamera.startPreview();
 						mIsPreviewing = true;
