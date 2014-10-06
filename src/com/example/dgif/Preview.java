@@ -3,18 +3,28 @@ package com.example.dgif;
 
 
 import java.io.IOException;
+import java.util.List;
 
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.hardware.Camera;
+import android.hardware.Camera.AutoFocusCallback;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.Button;
 import android.widget.FrameLayout;
 
 public class Preview extends Activity {
@@ -27,6 +37,15 @@ public class Preview extends Activity {
 	private Camera mCamera;
 	private CamView mPreview;
 	private boolean mIsPreviewing = false;
+	private FrameLayout mPreviewFrame;
+	
+	private float mMotionX = 0;
+	private float mMotionY = 0;
+	private float mMotionZ = 0;
+	
+	private AutoFocusListener afListenerCallback;
+	private Sensor mAccelerometer;
+	SensorManager mSensorManager;
 
 	
 	
@@ -35,6 +54,7 @@ public class Preview extends Activity {
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.activity_main);
 		
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		
 		new Thread(new LoadCameraAndPrev()).start();
 		
@@ -49,7 +69,7 @@ public class Preview extends Activity {
 			if (msg != null) {
 				switch (msg.what) {
 				case LOAD_CAM_PREV:
-					//setUpViewAndHolders();
+				
 					setupView();
 					
 				}
@@ -63,8 +83,27 @@ public class Preview extends Activity {
 	
 	public void setupView() {
 		mPreview = new CamView(this, mCamera);
-		FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(mPreview);
+		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
+		
+		mPreviewFrame.setOnTouchListener(new View.OnTouchListener() {
+			
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				Log.i(DEBUG_TAG, "view touched");
+				
+				//do autofocus
+			
+				if (mIsPreviewing) {
+					
+				}
+				
+				return false;
+			}
+		});
+		
+
+		mPreviewFrame.addView(mPreview);
+
 	}
 
 	private class LoadCameraAndPrev implements Runnable {
@@ -81,8 +120,52 @@ public class Preview extends Activity {
 				finish();
 			}
 			
-	
+			mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+			mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+			
+			afListenerCallback = new AutoFocusListener();
+			
+			mSensorManager.registerListener(afListenerCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+			
+			mCamera.setDisplayOrientation(90);
 			mHandler.sendMessage(mHandler.obtainMessage(LOAD_CAM_PREV));
+			
+		}
+		
+	}
+	
+	private class AutoFocusListener implements SensorEventListener, AutoFocusCallback {
+
+		@Override
+		public void onAutoFocus(boolean success, Camera camera) {
+			Log.d(DEBUG_TAG, "onAutoFocus");
+			
+		}
+
+		@Override
+		public void onSensorChanged(SensorEvent event) {
+			
+			if(Math.abs(event.values[0] - mMotionX) > 1 
+		            || Math.abs(event.values[1] - mMotionY) > 1 
+		            || Math.abs(event.values[2] - mMotionZ) > 1 ) {
+		            Log.d("Camera System", "Refocus");
+		            try {
+		            	Log.d(DEBUG_TAG, "try autofocus");
+		                mCamera.autoFocus(this);
+		            } catch (RuntimeException e) { 
+		            	Log.e(DEBUG_TAG, "try autofocus FAIL");
+		            }
+		            
+		            mMotionX = event.values[0];
+		            mMotionY = event.values[1];
+		            mMotionZ = event.values[2];
+		        }
+			
+		}
+
+		@Override
+		public void onAccuracyChanged(Sensor sensor, int accuracy) {
+			// TODO Auto-generated method stub
 			
 		}
 		
@@ -105,9 +188,10 @@ public class Preview extends Activity {
 
 		@Override
 		public void surfaceCreated(SurfaceHolder holder) {
-			// TODO Auto-generated method stub
 			Log.i(DEBUG_TAG, "surface created");
-			showPreview(mHolder);
+			startPreview(mHolder);
+			
+			//TODO: Add Loading Circle before camera shows up 
 			
 		}
 
@@ -117,25 +201,92 @@ public class Preview extends Activity {
 			Log.i(DEBUG_TAG, "surface changed");
 			
 			if (mHolder.getSurface() == null) {
+				Log.e(DEBUG_TAG, "mHolder is null in surfaceChanged");
 				return;
 			}
 			
+			
+			
+			//TODO: surfaceChange causes bug because camera becomes null
 			//shut down current preview
 			stopPreview();
+			mCamera.stopPreview();
+			
+			setCameraParameters(width, height);
 			
 			//start preview
-			showPreview(mHolder);
+			startPreview(mHolder);
+
 			
 			
 		}
 
 		@Override
 		public void surfaceDestroyed(SurfaceHolder holder) {
-			// TODO Auto-generated method stub
 			
+			//do nothing
 		}
-		
+
+		// Change camera parameters
+		//TODO: Check if camera parameters are correct. Right now it still looks weird
+		//TODO: Add autofocus camera functionality
+		private void setCameraParameters(int width, int height) {
+
+			// Get camera parameters object
+			Camera.Parameters p = mCamera.getParameters();
+			
+
+            p.set("orientation", "portrait");
+            mCamera.setParameters(p);
+
+			// Find closest supported preview size
+			Camera.Size bestSize = findBestSize(p, width, height);
+
+			// FIX - Should lock in landscape mode?
+
+			int tmpWidth = bestSize.width;
+			int tmpHeight = bestSize.height;
+
+			if (bestSize.width < bestSize.height) {
+				tmpWidth = bestSize.height;
+				tmpHeight = bestSize.width;
+			}
+
+			List<Camera.Size> supportedSizes = p.getSupportedPreviewSizes();
+			
+			//p.setPreviewSize(tmpWidth, tmpHeight);
+			Log.d(DEBUG_TAG, "width: " + supportedSizes.get(2).width + " height: " + supportedSizes.get(2).height);
+			p.setPreviewSize(supportedSizes.get(1).width, supportedSizes.get(1).height);
+			
+			mCamera.setParameters(p);
+		}
+
+		// Determine the largest supported preview size
+		//TODO: Delete this method? Right 720 x 1280 is hardcoded
+		private Camera.Size findBestSize(Camera.Parameters parameters,
+				int width, int height) {
+
+			List<Camera.Size> supportedSizes = parameters
+					.getSupportedPreviewSizes();
+
+			Camera.Size bestSize = supportedSizes.remove(0);
+
+			for (Camera.Size size : supportedSizes) {
+				
+				Log.d(DEBUG_TAG, size.width + " x " + size.height);
+				
+				if ((size.width * size.height) > (bestSize.width * bestSize.height)) {
+					bestSize = size;
+				}
+			}
+
+			Log.d(DEBUG_TAG, "Best size: " + bestSize.width + " x " + bestSize.height);
+			return bestSize;
+		}
+
 	}
+	
+	
 	
 	
 
@@ -165,7 +316,7 @@ public class Preview extends Activity {
 		stopPreview();
 	}
 	
-	private void showPreview(final SurfaceHolder mHolder) {
+	private void startPreview(final SurfaceHolder mHolder) {
 		
 		new Thread(new Runnable() {
 
@@ -173,6 +324,8 @@ public class Preview extends Activity {
 			public void run() {
 				if (mCamera != null && !mIsPreviewing) {
 					try {
+						
+						
 						mCamera.setPreviewDisplay(mHolder);
 						mCamera.startPreview();
 						mIsPreviewing = true;
@@ -195,6 +348,10 @@ public class Preview extends Activity {
 			mCamera.stopPreview();
 			mCamera.release();
 			mCamera = null;
+			mIsPreviewing = false;
+			
+			mSensorManager.unregisterListener(afListenerCallback, mAccelerometer);
+			
 		}
 	}
 

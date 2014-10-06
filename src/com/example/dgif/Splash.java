@@ -65,6 +65,7 @@ public class Splash extends ActionBarActivity {
 		ActionBar actionBar = getActionBar();
 		actionBar.hide();
 		
+		
 
     }
     
