@@ -5,6 +5,7 @@ package com.example.dgif;
 import java.io.IOException;
 import java.util.List;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
@@ -31,19 +32,24 @@ public class Preview extends Activity {
 	
 	
 	private static final String DEBUG_TAG = "Preview";
+	
+	public final static int VIEW_WIDTH = 720;
+	public final static int VIEW_HEIGHT = 1280;
+	
 
 	protected static final int LOAD_CAM_PREV = 0;
 	
 	private Camera mCamera;
 	private CamView mPreview;
-	private boolean mIsPreviewing = false;
+	private boolean mIsPreviewing;
+	private UIHandler mHandler;
 	private FrameLayout mPreviewFrame;
 	
-	private float mMotionX = 0;
-	private float mMotionY = 0;
-	private float mMotionZ = 0;
+	private float mMotionX;
+	private float mMotionY;
+	private float mMotionZ;
 	
-	private AutoFocusListener afListenerCallback;
+	private AutoFocusListener mAutoFocusCallback;
 	private Sensor mAccelerometer;
 	SensorManager mSensorManager;
 
@@ -54,15 +60,171 @@ public class Preview extends Activity {
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.activity_main);
 		
-		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
+		
+		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+		mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		mAutoFocusCallback = new AutoFocusListener();
+		
+		mIsPreviewing = false;
+		mHandler = new UIHandler();
+		
+		mMotionX = 0;
+		mMotionY = 0;
+		mMotionZ = 0;
+		
 		
 		new Thread(new LoadCameraAndPrev()).start();
 		
 		
 	}
 
-	Handler mHandler = new Handler() {
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		
+		View decorView = getWindow().getDecorView();
 
+		// Hide the status bar.
+		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+		decorView.setSystemUiVisibility(uiOptions);
+
+		// Hide action bar
+		ActionBar actionBar = getActionBar();
+		actionBar.hide();
+	}
+
+
+	
+	@Override
+	protected void onPause() {
+		// TODO Auto-generated method stub
+		super.onPause();
+		
+		stopPreview();
+		releaseCamera();
+	}
+	
+
+	/*********************************************************************************************/
+	
+	 
+	/*SETUP VIEW
+	 * - Called only after a LoadCameraAndPrev thread is finished
+	 * - Adds listener to newly created view view and adds it to the frame
+	 */
+	public void setupView() {
+		mPreview = new CamView(this, mCamera);
+		mPreviewFrame.setOnTouchListener(new View.OnTouchListener() {
+			
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				Log.i(DEBUG_TAG, "view touched");
+				
+				//take picture
+			
+				
+				return false;
+			}
+		});
+
+		mPreviewFrame.addView(mPreview);
+
+	}
+	
+
+	/* START PREVIEW 
+	 * - Sets preview display as surface holder
+	 * - starts camera's preview
+	 */
+	private void startPreview(final SurfaceHolder mHolder) {
+		
+		if (mCamera != null && !mIsPreviewing) {
+
+			try {
+				mCamera.setPreviewDisplay(mHolder);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			mCamera.startPreview();
+			mIsPreviewing = true;
+			
+		} else {
+			Log.e(DEBUG_TAG, "mCamera is null and mIsPrev: " + mIsPreviewing);
+		}
+
+	}
+	
+	
+	/* STOP PREVIEW
+	 * Stops camera preview on surface view (cam view) and unregisters listener
+	 */
+	private void stopPreview() {
+		if (mCamera != null && mIsPreviewing) {
+			mCamera.stopPreview();
+			mIsPreviewing = false;
+			
+		}
+	}
+	
+	/* RELEASE CAMERA
+	 * Release camera so other applications can use it
+	 */
+	private void releaseCamera() {
+		if (mCamera != null) {
+			mSensorManager.unregisterListener(mAutoFocusCallback, mAccelerometer);
+			mCamera.release();
+			mCamera = null;
+		}
+	}
+
+
+	
+	/*********************************************************************************************/
+    /*									 INNER CLASSES                                           */
+	/*********************************************************************************************/
+	
+	/*LOAD CAMERA AND PREV CLASS (THREAD USE)
+	 * - Opens camera instance
+	 * - Sets parameters for camera
+	 * - Attaches sensor listener
+	 */
+	private class LoadCameraAndPrev implements Runnable {
+
+		@Override
+		public void run() {
+			
+			//Open Camera
+			try {
+				mCamera = Camera.open();
+				Log.i(DEBUG_TAG, "Camera opened");
+			} catch (RuntimeException e) {
+				Log.e(DEBUG_TAG, "Camera will not open. onCreate");
+				finish();
+			}
+			
+			Camera.Parameters p = mCamera.getParameters();
+			p.setPreviewSize(VIEW_HEIGHT, VIEW_WIDTH);      //Note that height and width are switched 
+			mCamera.setParameters(p);
+			
+			mSensorManager.registerListener(mAutoFocusCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+			
+			mCamera.setDisplayOrientation(90);
+			
+			mHandler.sendMessage(mHandler.obtainMessage(LOAD_CAM_PREV));
+			
+		}
+		
+	}
+	
+	/*UI HANDLER CLASS
+	 * Responsible for posting tasks to UI's task queue from another thread
+	 */
+	@SuppressLint("HandlerLeak")
+	private class UIHandler extends Handler {
+		
 		@Override
 		public void handleMessage(Message msg) {
 
@@ -78,59 +240,14 @@ public class Preview extends Activity {
 			}
 
 		}
-
-	};
-	
-	public void setupView() {
-		mPreview = new CamView(this, mCamera);
-		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
 		
-		mPreviewFrame.setOnTouchListener(new View.OnTouchListener() {
-			
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				Log.i(DEBUG_TAG, "view touched");
-				
-				//take picture
-			
-				
-				return false;
-			}
-		});
-		
-
-		mPreviewFrame.addView(mPreview);
-
-	}
-
-	private class LoadCameraAndPrev implements Runnable {
-
-		@Override
-		public void run() {
-			
-			//Open Camera
-			try {
-				mCamera = Camera.open();
-				Log.i(DEBUG_TAG, "Camera opened");
-			} catch (RuntimeException e) {
-				Log.e(DEBUG_TAG, "Camera will not open. onCreate");
-				finish();
-			}
-			
-			mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-			mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-			
-			afListenerCallback = new AutoFocusListener();
-			
-			mSensorManager.registerListener(afListenerCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-			
-			mCamera.setDisplayOrientation(90);
-			mHandler.sendMessage(mHandler.obtainMessage(LOAD_CAM_PREV));
-			
-		}
 		
 	}
 	
+	
+	/* AUTO FOCUS LISTENER CLASS
+	 * - Used to auto focus whenever there is a change in movement
+	 */
 	private class AutoFocusListener implements SensorEventListener, AutoFocusCallback {
 
 		@Override
@@ -168,7 +285,11 @@ public class Preview extends Activity {
 		
 	}
 	
+
 	
+	/*CAM VIEW CLASS
+	 * Serves as the preview screen for seeing what the camera sees live
+	 */
 	private class CamView extends SurfaceView implements SurfaceHolder.Callback {
 
 		private SurfaceHolder mHolder;
@@ -179,6 +300,7 @@ public class Preview extends Activity {
 			mCamera = camera;
 			
 			mHolder = getHolder();
+			
 			mHolder.addCallback(this);
 			
 		}
@@ -202,20 +324,10 @@ public class Preview extends Activity {
 				return;
 			}
 			
-			
-			
-			//TODO: surfaceChange causes bug because camera becomes null
-			//shut down current preview
 			stopPreview();
 
-			
-			
-			
-			//start preview
 			startPreview(mHolder);
 
-			
-			
 		}
 
 		@Override
@@ -224,162 +336,11 @@ public class Preview extends Activity {
 			//do nothing
 		}
 
-		// Change camera parameters
-		//TODO: Check if camera parameters are correct. Right now it still looks weird
-		//TODO: Add autofocus camera functionality
-		private void setCameraParameters(int width, int height) {
 
-			// Get camera parameters object
-			Camera.Parameters p = mCamera.getParameters();
-			
-
-            p.set("orientation", "portrait");
-            mCamera.setParameters(p);
-
-			// Find closest supported preview size
-			Camera.Size bestSize = findBestSize(p, width, height);
-
-			// FIX - Should lock in landscape mode?
-
-			int tmpWidth = bestSize.width;
-			int tmpHeight = bestSize.height;
-
-			if (bestSize.width < bestSize.height) {
-				tmpWidth = bestSize.height;
-				tmpHeight = bestSize.width;
-			}
-			
-			List<Camera.Size> supportedSizes = p.getSupportedPreviewSizes();
-			
-			
-			//p.setPreviewSize(tmpWidth, tmpHeight);
-			Log.d(DEBUG_TAG, "width: " + supportedSizes.get(2).width + " height: " + supportedSizes.get(2).height);
-			p.setPreviewSize(supportedSizes.get(1).width, supportedSizes.get(1).height);
-			
-			mCamera.setParameters(p);
-		}
-
-		// Determine the largest supported preview size
-		//TODO: Delete this method? Right 720 x 1280 is hardcoded
-		private Camera.Size findBestSize(Camera.Parameters parameters,
-				int width, int height) {
-
-			List<Camera.Size> supportedSizes = parameters
-					.getSupportedPreviewSizes();
-
-			Camera.Size bestSize = supportedSizes.remove(0);
-
-			for (Camera.Size size : supportedSizes) {
-				
-				Log.d(DEBUG_TAG, size.width + " x " + size.height);
-				
-				if ((size.width * size.height) > (bestSize.width * bestSize.height)) {
-					bestSize = size;
-				}
-			}
-
-			Log.d(DEBUG_TAG, "Best size: " + bestSize.width + " x " + bestSize.height);
-			return bestSize;
-		}
 
 	}
 	
 	
-	
-	
-
-	@Override
-	protected void onResume() {
-		// TODO Auto-generated method stub
-		super.onResume();
-		
-		View decorView = getWindow().getDecorView();
-
-		// Hide the status bar.
-		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-		decorView.setSystemUiVisibility(uiOptions);
-
-		// Hide action bar
-		ActionBar actionBar = getActionBar();
-		actionBar.hide();
-	}
-
-
-	
-	@Override
-	protected void onPause() {
-		// TODO Auto-generated method stub
-		super.onPause();
-		
-		stopPreview();
-	}
-	
-	private void startPreview(final SurfaceHolder mHolder) {
-		
-
-		
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				
-				
-				if (mCamera == null) {
-					try {
-						mCamera = Camera.open();
-					} catch (RuntimeException e) {
-						Log.d(DEBUG_TAG, "camera wont open. start prev");
-					}
-				}
-				
-				if (mCamera != null && !mIsPreviewing) {
-					try {
-						
-						
-						Camera.Parameters p = mCamera.getParameters();
-						List<Camera.Size> supportedSizes = p.getSupportedPreviewSizes();
-						
-						
-						//p.setPreviewSize(tmpWidth, tmpHeight);
-						Log.d(DEBUG_TAG, "width: " + supportedSizes.get(2).width + " height: " + supportedSizes.get(2).height);
-						p.setPreviewSize(supportedSizes.get(1).width, supportedSizes.get(1).height);
-						
-						mCamera.setParameters(p);
-						
-						mSensorManager.registerListener(afListenerCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-						
-						mCamera.setDisplayOrientation(90);
-						mCamera.setPreviewDisplay(mHolder);
-						mCamera.startPreview();
-						mIsPreviewing = true;
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				} else {
-					Log.e(DEBUG_TAG, "mCamera is null and mIsPrev: " + mIsPreviewing);
-				}
-			}
-			
-		}).start();
-		
-		
-	}
-	
-	
-	private void stopPreview() {
-		if (mCamera != null && mIsPreviewing) {
-			mCamera.stopPreview();
-			mCamera.release();
-			mCamera = null;
-			mIsPreviewing = false;
-			
-			mSensorManager.unregisterListener(afListenerCallback, mAccelerometer);
-			
-		}
-	}
-
-
-
 
 
 	
