@@ -122,7 +122,13 @@ public class Preview extends Activity {
 			public boolean onTouch(View v, MotionEvent event) {
 				Log.i(DEBUG_TAG, "view touched");
 				
-				//take picture
+
+				
+				if (mCamera != null && mIsPreviewing) {
+					
+					mCamera.takePicture(null, null, mPictureCallback);
+					
+				}
 			
 				
 				return false;
@@ -163,9 +169,10 @@ public class Preview extends Activity {
 	 */
 	private void stopPreview() {
 		if (mCamera != null && mIsPreviewing) {
-			mCamera.stopPreview();
+			Log.d(DEBUG_TAG, "stop preview");
 			mIsPreviewing = false;
-			
+			mCamera.stopPreview();
+
 		}
 	}
 	
@@ -181,6 +188,29 @@ public class Preview extends Activity {
 	}
 
 
+	
+	Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
+		
+		@Override
+		public void onPictureTaken(byte[] data, Camera camera) {
+			
+			mIsPreviewing = false;
+			
+			//Give user time to view image
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				Log.e(DEBUG_TAG, "Thread sleep failure on picture taken");
+			}
+			
+			//save image
+			
+			//restart preview
+			startPreview(mPreview.getHolder());
+			
+		}
+		
+	};
 	
 	/*********************************************************************************************/
     /*									 INNER CLASSES                                           */
