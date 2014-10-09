@@ -98,6 +98,9 @@ public class Preview extends Activity {
 		ActionBar actionBar = getActionBar();
 		actionBar.hide();
 		
+		//TODO: Camera is null sometimes
+
+		
 		
 	}
 
