@@ -51,7 +51,9 @@ public class Preview extends Activity {
 	
 	private AutoFocusListener mAutoFocusCallback;
 	private Sensor mAccelerometer;
-	SensorManager mSensorManager;
+	private SensorManager mSensorManager;
+	
+	private MemoryManager memoryManager;
 
 	
 	
@@ -61,6 +63,8 @@ public class Preview extends Activity {
 		this.setContentView(R.layout.activity_main);
 		
 		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
+		
+		memoryManager = new MemoryManager(this);
 		
 		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 		mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -73,7 +77,7 @@ public class Preview extends Activity {
 		mMotionY = 0;
 		mMotionZ = 0;
 		
-		
+		// Begin loading camera resource
 		new Thread(new LoadCameraAndPrev()).start();
 		
 		
@@ -93,6 +97,8 @@ public class Preview extends Activity {
 		// Hide action bar
 		ActionBar actionBar = getActionBar();
 		actionBar.hide();
+		
+		
 	}
 
 
@@ -121,16 +127,11 @@ public class Preview extends Activity {
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				Log.i(DEBUG_TAG, "view touched");
-				
 
-				
 				if (mCamera != null && mIsPreviewing) {
-					
 					mCamera.takePicture(null, null, mPictureCallback);
-					
 				}
-			
-				
+
 				return false;
 			}
 		});
@@ -144,12 +145,12 @@ public class Preview extends Activity {
 	 * - Sets preview display as surface holder
 	 * - starts camera's preview
 	 */
-	private void startPreview(final SurfaceHolder mHolder) {
+	private void startPreview(final SurfaceHolder holder) {
 		
 		if (mCamera != null && !mIsPreviewing) {
 
 			try {
-				mCamera.setPreviewDisplay(mHolder);
+				mCamera.setPreviewDisplay(holder);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -184,6 +185,7 @@ public class Preview extends Activity {
 			mSensorManager.unregisterListener(mAutoFocusCallback, mAccelerometer);
 			mCamera.release();
 			mCamera = null;
+
 		}
 	}
 
@@ -196,7 +198,11 @@ public class Preview extends Activity {
 			
 			mIsPreviewing = false;
 			
+			
+			
 			//Give user time to view image
+			//TODO: Change to new activity preview screen so user can choose to 
+			// retake picture or keep
 			try {
 				Thread.sleep(3000);
 			} catch (InterruptedException e) {
@@ -204,6 +210,8 @@ public class Preview extends Activity {
 			}
 			
 			//save image
+			memoryManager.saveImage(data);
+			
 			
 			//restart preview
 			startPreview(mPreview.getHolder());
