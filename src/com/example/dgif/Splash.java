@@ -9,6 +9,7 @@ import android.view.View;
 
 /* @author Carmina Villaflores
  * Splash screen which appears upon starting up 3dGif APP 
+ * TODO: Fix actionbar from showing in initial load of screen 
  */
 public class Splash extends ActionBarActivity {
 

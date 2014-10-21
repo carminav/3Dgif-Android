@@ -105,7 +105,6 @@ public class Preview extends Activity {
 	}
 
 
-	
 	@Override
 	protected void onPause() {
 		// TODO Auto-generated method stub
@@ -200,8 +199,6 @@ public class Preview extends Activity {
 		public void onPictureTaken(byte[] data, Camera camera) {
 			
 			mIsPreviewing = false;
-			
-			
 			
 			//Give user time to view image
 			//TODO: Change to new activity preview screen so user can choose to 
