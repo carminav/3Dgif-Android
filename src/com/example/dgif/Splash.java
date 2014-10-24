@@ -43,8 +43,8 @@ public class Splash extends ActionBarActivity {
 					//do nothing
 				} finally {
 					finish();
-					//startActivity(new Intent(Splash.this, Preview.class));
-					startActivity(new Intent(Splash.this, ImageGallery.class));
+					startActivity(new Intent(Splash.this, Preview.class));
+					//startActivity(new Intent(Splash.this, ImageGallery.class));
 				}
 			}
 		};

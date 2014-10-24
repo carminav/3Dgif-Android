@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
@@ -24,6 +25,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -45,6 +47,8 @@ public class Preview extends Activity {
 	private UIHandler mHandler;
 	private FrameLayout mPreviewFrame;
 	
+	private Button mBackButton;
+	
 	private float mMotionX;
 	private float mMotionY;
 	private float mMotionZ;
@@ -54,6 +58,8 @@ public class Preview extends Activity {
 	private SensorManager mSensorManager;
 	
 	private MemoryManager memoryManager;
+	
+	private boolean onStartCalled = false;
 
 	
 	
@@ -63,6 +69,7 @@ public class Preview extends Activity {
 		this.setContentView(R.layout.activity_main);
 		
 		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
+		mBackButton = (Button) findViewById(R.id.back_button);
 		
 		memoryManager = new MemoryManager(this);
 		
@@ -77,8 +84,20 @@ public class Preview extends Activity {
 		mMotionY = 0;
 		mMotionZ = 0;
 		
+		mBackButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(Preview.this, ImageGallery.class);
+				startActivity(i);
+				
+			}
+			
+		});
+		
 		// Begin loading camera resource
 		new Thread(new LoadCameraAndPrev()).start();
+		onStartCalled = true;
 		
 		
 	}
@@ -99,7 +118,11 @@ public class Preview extends Activity {
 		actionBar.hide();
 		
 		//TODO: Camera is null sometimes
-
+        Log.d(DEBUG_TAG, "onStartCalled: " + onStartCalled);
+        
+        if (!onStartCalled) {
+        	new Thread(new LoadCameraAndPrev()).start();
+        }
 		
 		
 	}
@@ -112,6 +135,8 @@ public class Preview extends Activity {
 		
 		stopPreview();
 		releaseCamera();
+		
+		onStartCalled = false;
 	}
 	
 
