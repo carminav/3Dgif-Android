@@ -3,14 +3,13 @@ package com.example.dgif;
 
 
 import java.io.IOException;
-import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
+import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Sensor;
@@ -26,10 +25,13 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
 
+
+//TODO: Add Rotation Vector sensor usage and replace accelerometer data in view
 public class Preview extends Activity {
 	
 	
@@ -53,13 +55,24 @@ public class Preview extends Activity {
 	private float mMotionY;
 	private float mMotionZ;
 	
+	private float mMotionXView;
+	private float mMotionYView;
+	private float mMotionZView;
+	
 	private AutoFocusListener mAutoFocusCallback;
 	private Sensor mAccelerometer;
 	private SensorManager mSensorManager;
 	
 	private MemoryManager memoryManager;
 	
-	private boolean onStartCalled = false;
+	private boolean onPauseCalled;
+	
+	private TextView mCoordXView;
+	private TextView mCoordYView;
+	private TextView mCoordZView;
+	
+	private ImageView blinkingArrowView;
+	private AnimationDrawable blinkingArrow;
 
 	
 	
@@ -70,6 +83,14 @@ public class Preview extends Activity {
 		
 		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
 		mBackButton = (Button) findViewById(R.id.back_button);
+		
+	    mCoordXView = (TextView) findViewById(R.id.xcoordView);
+	    mCoordYView = (TextView) findViewById(R.id.ycoordView);
+	    mCoordZView = (TextView) findViewById(R.id.zcoordView);
+	    
+	    blinkingArrowView = (ImageView) findViewById(R.id.blinking_arrow_view);
+	    blinkingArrow = ((AnimationDrawable) blinkingArrowView.getDrawable());
+	    
 		
 		memoryManager = new MemoryManager(this);
 		
@@ -84,6 +105,10 @@ public class Preview extends Activity {
 		mMotionY = 0;
 		mMotionZ = 0;
 		
+		mMotionXView = 0;
+		mMotionYView = 0;
+		mMotionZView = 0;
+		
 		mBackButton.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -97,7 +122,7 @@ public class Preview extends Activity {
 		
 		// Begin loading camera resource
 		new Thread(new LoadCameraAndPrev()).start();
-		onStartCalled = true;
+		onPauseCalled = false;
 		
 		
 	}
@@ -117,10 +142,8 @@ public class Preview extends Activity {
 		ActionBar actionBar = getActionBar();
 		actionBar.hide();
 		
-		//TODO: Camera is null sometimes
-        Log.d(DEBUG_TAG, "onStartCalled: " + onStartCalled);
-        
-        if (!onStartCalled) {
+	
+        if (onPauseCalled) {
         	new Thread(new LoadCameraAndPrev()).start();
         }
 		
@@ -136,7 +159,12 @@ public class Preview extends Activity {
 		stopPreview();
 		releaseCamera();
 		
-		onStartCalled = false;
+		if (blinkingArrow.isRunning()) {
+			blinkingArrow.stop();
+			blinkingArrowView.setVisibility(View.GONE);
+		}
+		
+		onPauseCalled = true;
 	}
 	
 
@@ -241,6 +269,9 @@ public class Preview extends Activity {
 			//restart preview
 			startPreview(mPreview.getHolder());
 			
+			blinkingArrowView.setVisibility(View.VISIBLE);
+			blinkingArrow.start();
+			
 		}
 		
 	};
@@ -336,9 +367,29 @@ public class Preview extends Activity {
 		            mMotionX = event.values[0];
 		            mMotionY = event.values[1];
 		            mMotionZ = event.values[2];
+		            
+		            
 		        }
 			
+			if(Math.abs(event.values[0] - mMotionXView) > 0.05 
+		            || Math.abs(event.values[1] - mMotionYView) > 0.05 
+		            || Math.abs(event.values[2] - mMotionZView) > 0.05 ) {
+				
+				mMotionXView = (float) Math.round(event.values[0] * 1000)/1000;
+				mMotionYView = (float) Math.round(event.values[1] * 1000)/1000;
+				mMotionZView = (float) Math.round(event.values[2] * 1000)/1000;
+				
+				mCoordXView.setText("" + mMotionXView);
+				mCoordYView.setText("" + mMotionYView);
+				mCoordZView.setText("" + mMotionZView);
+			}
+			
+			
+			
+			
 		}
+
+		
 
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {
