@@ -9,6 +9,10 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
@@ -27,6 +31,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -58,6 +63,7 @@ public class Preview extends Activity {
 	private float mMotionXView;
 	private float mMotionYView;
 	private float mMotionZView;
+	private GridLayout mHeader;
 	
 	private AutoFocusListener mAutoFocusCallback;
 	private Sensor mAccelerometer;
@@ -73,6 +79,9 @@ public class Preview extends Activity {
 	
 	private ImageView blinkingArrowView;
 	private AnimationDrawable blinkingArrow;
+	
+	private ImageView mOverlayView;
+	private Bitmap mLastImage;
 
 	
 	
@@ -81,6 +90,8 @@ public class Preview extends Activity {
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.activity_main);
 		
+		mLastImage = null;
+		
 		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
 		mBackButton = (Button) findViewById(R.id.back_button);
 		
@@ -88,8 +99,12 @@ public class Preview extends Activity {
 	    mCoordYView = (TextView) findViewById(R.id.ycoordView);
 	    mCoordZView = (TextView) findViewById(R.id.zcoordView);
 	    
+	    mHeader = (GridLayout) findViewById(R.id.coord_view);
+	    
 	    blinkingArrowView = (ImageView) findViewById(R.id.blinking_arrow_view);
 	    blinkingArrow = ((AnimationDrawable) blinkingArrowView.getDrawable());
+	    
+	    mOverlayView = (ImageView) findViewById(R.id.image_overlay_view);
 	    
 		
 		memoryManager = new MemoryManager(this);
@@ -162,6 +177,10 @@ public class Preview extends Activity {
 		if (blinkingArrow.isRunning()) {
 			blinkingArrow.stop();
 			blinkingArrowView.setVisibility(View.GONE);
+		}
+		
+		if (mOverlayView.getVisibility() == View.VISIBLE) {
+			mOverlayView.setVisibility(View.GONE);
 		}
 		
 		onPauseCalled = true;
@@ -272,9 +291,75 @@ public class Preview extends Activity {
 			blinkingArrowView.setVisibility(View.VISIBLE);
 			blinkingArrow.start();
 			
+			//Bitmap bitmap = Preview.rotatePic(data, mOverlayView.getWidth(), mOverlayView.getHeight());
+			//mOverlayView.setImageBitmap(bitmap);
+			
+			//mOverlayView.draw(rotatePic(data));
+			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+			mOverlayView.setImageBitmap(bm);
+			
+			
+//			mOverlayView.setRotation(90);
+//			mOverlayView.setScaleType(ImageView.ScaleType.MATRIX);
+			mOverlayView.setScaleType(ImageView.ScaleType.FIT_XY);
+			
+			if (mOverlayView.getVisibility() == View.GONE) {
+				mOverlayView.setVisibility(View.VISIBLE);
+				mBackButton.bringToFront();
+				mHeader.bringToFront();
+				
+			}
+			
+			
 		}
 		
 	};
+	
+	//private static Canvas rotatePic(byte[] data, int newWidth, int newHeight) {
+		private static Canvas rotatePic(byte[] data) {
+		
+		Bitmap bitmapSrc = BitmapFactory.decodeByteArray(data, 0, data.length);
+//		int width = bitmapSrc.getWidth();
+//		int height = bitmapSrc.getHeight();
+//		
+//		Log.d(DEBUG_TAG, "width: " + width);
+//		Log.d(DEBUG_TAG, "height: " + height);
+//
+//		
+//		//calculate scale
+//		float scaleWidth = ((float) newWidth) / width;
+//		float scaleHeight = ((float) newHeight) / height;
+//		
+//		//create matrix for manipulation
+//		Matrix matrix = new Matrix();
+//		//resize bitmap
+//		matrix.postScale(scaleWidth, scaleHeight);
+//		//rotate the bitmap
+//		matrix.postRotate(90);
+//		
+//		
+//		new Thread(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				// TODO Auto-generated method stub
+//				
+//			}
+//			
+//		}).start();
+//		
+//		
+//		//recreate new bitmap
+//		Bitmap bitmapNew = Bitmap.createBitmap(bitmapSrc, width, height, 0, 0, matrix, true);
+		
+		Matrix rotator = new Matrix();
+		rotator.postRotate(90);
+		Bitmap mutableBitmap = bitmapSrc.copy(Bitmap.Config.ARGB_8888, true);
+		//Canvas canvas = new Canvas(mutableBitmap);
+        Canvas canvas = new Canvas();
+		canvas.drawBitmap(bitmapSrc, rotator, null);
+		return canvas;
+	}
 	
 	/*********************************************************************************************/
     /*									 INNER CLASSES                                           */
@@ -300,7 +385,9 @@ public class Preview extends Activity {
 			}
 			
 			Camera.Parameters p = mCamera.getParameters();
+			p.setRotation(90);
 			p.setPreviewSize(VIEW_HEIGHT, VIEW_WIDTH);      //Note that height and width are switched 
+			
 			mCamera.setParameters(p);
 			
 			mSensorManager.registerListener(mAutoFocusCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);

@@ -10,13 +10,18 @@
     
     >
 
+        
+    
 
     <FrameLayout
     android:id="@+id/camera_preview"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:layout_weight="1">
+ 
    </FrameLayout>
+   
+   
    
    <Button
         android:id="@+id/back_button"
@@ -28,7 +33,8 @@
         android:text="&lt;&lt;" 
         />
    
-   <GridLayout
+    <GridLayout
+       android:id="@+id/coord_view"
        android:layout_width="match_parent"
        android:layout_height="50dp"
        android:alpha="0.60"
@@ -78,5 +84,13 @@
            android:visibility="gone"/>
 
    </GridLayout>
-    
+   
+   <ImageView
+        android:id="@+id/image_overlay_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:alpha="0.7"
+        android:background="#ffffff"
+        android:visibility="gone" />
+   
 </RelativeLayout>
