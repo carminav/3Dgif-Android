@@ -3,6 +3,7 @@ package com.example.dgif;
 
 
 import java.io.IOException;
+import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
@@ -16,6 +17,7 @@ import android.graphics.Matrix;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
+import android.hardware.Camera.Size;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -44,6 +46,9 @@ public class Preview extends Activity {
 	
 	public final static int VIEW_WIDTH = 720;
 	public final static int VIEW_HEIGHT = 1280;
+	public final static int PIC_WIDTH = 480; //1458;
+	public final static int PIC_HEIGHT = 640; //2592;
+	public final static int VIEW_PIC_RATIO = VIEW_WIDTH / PIC_WIDTH;
 	
 
 	protected static final int LOAD_CAM_PREV = 0;
@@ -291,17 +296,52 @@ public class Preview extends Activity {
 			blinkingArrowView.setVisibility(View.VISIBLE);
 			blinkingArrow.start();
 			
+			/* Regular */
+			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+			
+			//resize
+			int cropFromBothSides = 45;
+			int newWidth = 480 - (2 * cropFromBothSides);
+			double newRatio = 720 / newWidth;
+			int newHeight = (int) (640 * newRatio);
+			
+			Bitmap croppedBM = Bitmap.createBitmap(bm, cropFromBothSides - 5, 0, newWidth, 640);
+			Log.d(DEBUG_TAG, "cropped bm: " + croppedBM.getWidth() + " x " + croppedBM.getHeight());
+			//scale
+			Bitmap scaledBM = Bitmap.createScaledBitmap(croppedBM, 720, 1100, true);
+			
+			//set scale type
+			mOverlayView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+			
+			
+			//shift
+			//Bitmap shiftedBM = Bitmap.createBitmap(scaledBM, x, y, width, height, m, filter)
+			
+			
+			//put in imageview
+			mOverlayView.setImageBitmap(scaledBM);
+			Log.d(DEBUG_TAG, "new width: " + (PIC_WIDTH * VIEW_PIC_RATIO));
+			Log.d(DEBUG_TAG, "new height: " + (PIC_HEIGHT * VIEW_PIC_RATIO));
+			Log.d(DEBUG_TAG, "scaled bm: " + scaledBM.getWidth() + " x " + scaledBM.getHeight());
+			
+			
 			//Bitmap bitmap = Preview.rotatePic(data, mOverlayView.getWidth(), mOverlayView.getHeight());
 			//mOverlayView.setImageBitmap(bitmap);
 			
 			//mOverlayView.draw(rotatePic(data));
-			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
-			mOverlayView.setImageBitmap(bm);
+//			final BitmapFactory.Options options = new BitmapFactory.Options();
+//			options.inJustDecodeBounds = true;
+//			BitmapFactory.decodeByteArray(data, 0, data.length, options);
+//			options.inSampleSize = VIEW_PIC_RATIO;
+//			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+//			//Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+//			mOverlayView.setImageBitmap(bm);
 			
 			
 //			mOverlayView.setRotation(90);
 //			mOverlayView.setScaleType(ImageView.ScaleType.MATRIX);
-			mOverlayView.setScaleType(ImageView.ScaleType.FIT_XY);
+		//	mOverlayView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+		//	mOverlayView.setScaleType(ImageView.ScaleType.FIT_XY);
 			
 			if (mOverlayView.getVisibility() == View.GONE) {
 				mOverlayView.setVisibility(View.VISIBLE);
@@ -314,6 +354,14 @@ public class Preview extends Activity {
 		}
 		
 	};
+	
+//	private static Bitmap resizeBitmapForOverlay(byte[] data) {
+//		
+//		Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+//		
+//		return Bitmap.createsc
+//		
+//	}
 	
 	//private static Canvas rotatePic(byte[] data, int newWidth, int newHeight) {
 		private static Canvas rotatePic(byte[] data) {
@@ -385,8 +433,16 @@ public class Preview extends Activity {
 			}
 			
 			Camera.Parameters p = mCamera.getParameters();
-			p.setRotation(90);
 			p.setPreviewSize(VIEW_HEIGHT, VIEW_WIDTH);      //Note that height and width are switched 
+			p.setRotation(90);
+			
+			p.setPictureSize(PIC_HEIGHT, PIC_WIDTH);
+			List<Size> sizes = p.getSupportedPictureSizes();
+			//List<Size> sHeights = p.getSupportedPictureSizes();
+			Log.d(DEBUG_TAG, "supported picture sizes:");
+			for (int i = 0; i < sizes.size(); i++) {
+				Log.d(DEBUG_TAG, sizes.get(i).width + " x " + sizes.get(i).height);
+			}
 			
 			mCamera.setParameters(p);
 			
@@ -433,7 +489,7 @@ public class Preview extends Activity {
 
 		@Override
 		public void onAutoFocus(boolean success, Camera camera) {
-			Log.d(DEBUG_TAG, "onAutoFocus");
+			//Log.d(DEBUG_TAG, "onAutoFocus");
 			
 		}
 
@@ -443,9 +499,9 @@ public class Preview extends Activity {
 			if(Math.abs(event.values[0] - mMotionX) > 1 
 		            || Math.abs(event.values[1] - mMotionY) > 1 
 		            || Math.abs(event.values[2] - mMotionZ) > 1 ) {
-		            Log.d("Camera System", "Refocus");
+		           ;
 		            try {
-		            	Log.d(DEBUG_TAG, "try autofocus");
+		          
 		                mCamera.autoFocus(this);
 		            } catch (RuntimeException e) { 
 		            	Log.e(DEBUG_TAG, "try autofocus FAIL");
