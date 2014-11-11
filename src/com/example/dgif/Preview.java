@@ -60,10 +60,14 @@ public class Preview extends Activity {
 	private FrameLayout mPreviewFrame;
 	
 	private Button mBackButton;
+	private Button mMovifyButton;
+	
+	private MovieEncoder mMovieEncoder;
 	
 	private float mMotionX;
 	private float mMotionY;
 	private float mMotionZ;
+	
 	
 	private float mMotionXView;
 	private float mMotionYView;
@@ -74,7 +78,7 @@ public class Preview extends Activity {
 	private Sensor mAccelerometer;
 	private SensorManager mSensorManager;
 	
-	private MemoryManager memoryManager;
+	private MemoryManager mMemoryManager;
 	
 	private boolean onPauseCalled;
 	
@@ -99,6 +103,10 @@ public class Preview extends Activity {
 		
 		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
 		mBackButton = (Button) findViewById(R.id.back_button);
+		mMovifyButton = (Button) findViewById(R.id.movify_button);
+		
+		mMovieEncoder = new MovieEncoder();
+		mMovieEncoder.saveContext(this);
 		
 	    mCoordXView = (TextView) findViewById(R.id.xcoordView);
 	    mCoordYView = (TextView) findViewById(R.id.ycoordView);
@@ -112,7 +120,7 @@ public class Preview extends Activity {
 	    mOverlayView = (ImageView) findViewById(R.id.image_overlay_view);
 	    
 		
-		memoryManager = new MemoryManager(this);
+		mMemoryManager = new MemoryManager(this);
 		
 		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 		mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -139,6 +147,29 @@ public class Preview extends Activity {
 			}
 			
 		});
+		
+		mMovifyButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				
+				new Thread(new Runnable() {
+
+					@Override
+					public void run() {
+						Log.d(DEBUG_TAG, "attempt to save movie");
+						Bitmap bitmaps[] = mMemoryManager.getAllImages();
+						mMovieEncoder.saveMovieFromBitmaps(bitmaps);
+					}
+					
+				}).start();
+				
+				
+			}
+			
+		});
+		
+		
 		
 		// Begin loading camera resource
 		new Thread(new LoadCameraAndPrev()).start();
@@ -287,8 +318,7 @@ public class Preview extends Activity {
 			}
 			
 			//save image
-			memoryManager.saveImage(data);
-			
+			mMemoryManager.saveImage(data);
 			
 			//restart preview
 			startPreview(mPreview.getHolder());
@@ -296,7 +326,8 @@ public class Preview extends Activity {
 			blinkingArrowView.setVisibility(View.VISIBLE);
 			blinkingArrow.start();
 			
-			/* Regular */
+			//TODO: Make counter. When n pictures are taken, create gif. 
+			/* Set picture to image overlay */
 			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
 			
 			//resize
@@ -324,24 +355,7 @@ public class Preview extends Activity {
 			Log.d(DEBUG_TAG, "new height: " + (PIC_HEIGHT * VIEW_PIC_RATIO));
 			Log.d(DEBUG_TAG, "scaled bm: " + scaledBM.getWidth() + " x " + scaledBM.getHeight());
 			
-			
-			//Bitmap bitmap = Preview.rotatePic(data, mOverlayView.getWidth(), mOverlayView.getHeight());
-			//mOverlayView.setImageBitmap(bitmap);
-			
-			//mOverlayView.draw(rotatePic(data));
-//			final BitmapFactory.Options options = new BitmapFactory.Options();
-//			options.inJustDecodeBounds = true;
-//			BitmapFactory.decodeByteArray(data, 0, data.length, options);
-//			options.inSampleSize = VIEW_PIC_RATIO;
-//			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-//			//Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
-//			mOverlayView.setImageBitmap(bm);
-			
-			
-//			mOverlayView.setRotation(90);
-//			mOverlayView.setScaleType(ImageView.ScaleType.MATRIX);
-		//	mOverlayView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-		//	mOverlayView.setScaleType(ImageView.ScaleType.FIT_XY);
+		
 			
 			if (mOverlayView.getVisibility() == View.GONE) {
 				mOverlayView.setVisibility(View.VISIBLE);
@@ -355,59 +369,7 @@ public class Preview extends Activity {
 		
 	};
 	
-//	private static Bitmap resizeBitmapForOverlay(byte[] data) {
-//		
-//		Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
-//		
-//		return Bitmap.createsc
-//		
-//	}
-	
-	//private static Canvas rotatePic(byte[] data, int newWidth, int newHeight) {
-		private static Canvas rotatePic(byte[] data) {
-		
-		Bitmap bitmapSrc = BitmapFactory.decodeByteArray(data, 0, data.length);
-//		int width = bitmapSrc.getWidth();
-//		int height = bitmapSrc.getHeight();
-//		
-//		Log.d(DEBUG_TAG, "width: " + width);
-//		Log.d(DEBUG_TAG, "height: " + height);
-//
-//		
-//		//calculate scale
-//		float scaleWidth = ((float) newWidth) / width;
-//		float scaleHeight = ((float) newHeight) / height;
-//		
-//		//create matrix for manipulation
-//		Matrix matrix = new Matrix();
-//		//resize bitmap
-//		matrix.postScale(scaleWidth, scaleHeight);
-//		//rotate the bitmap
-//		matrix.postRotate(90);
-//		
-//		
-//		new Thread(new Runnable() {
-//
-//			@Override
-//			public void run() {
-//				// TODO Auto-generated method stub
-//				
-//			}
-//			
-//		}).start();
-//		
-//		
-//		//recreate new bitmap
-//		Bitmap bitmapNew = Bitmap.createBitmap(bitmapSrc, width, height, 0, 0, matrix, true);
-		
-		Matrix rotator = new Matrix();
-		rotator.postRotate(90);
-		Bitmap mutableBitmap = bitmapSrc.copy(Bitmap.Config.ARGB_8888, true);
-		//Canvas canvas = new Canvas(mutableBitmap);
-        Canvas canvas = new Canvas();
-		canvas.drawBitmap(bitmapSrc, rotator, null);
-		return canvas;
-	}
+
 	
 	/*********************************************************************************************/
     /*									 INNER CLASSES                                           */

@@ -12,6 +12,7 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -34,10 +35,17 @@
             android:label="@string/title_activity_main"
             android:screenOrientation="portrait" >
         </activity>
-        
         <activity
             android:name=".ImageGallery"
             android:label="@string/title_activity_image_gallery" >
+        </activity>
+        <activity
+            android:name=".TestGifView"
+            android:label="@string/title_activity_test_gif_view"
+            android:parentActivityName=".ImageGallery" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ImageGallery" />
         </activity>
     </application>
 

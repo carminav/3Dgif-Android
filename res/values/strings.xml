@@ -9,7 +9,7 @@
     <color name="splash_red">#7D0000</color>
     <color name="black_loader">#000000</color>
 
-   
     <string name="title_activity_image_gallery">ImageGallery</string>
+    <string name="title_activity_test_gif_view">TestGifView</string>
 
 </resources>

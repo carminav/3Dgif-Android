@@ -1,6 +1,7 @@
 package com.example.dgif;
 
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,14 +14,18 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
+import android.util.Log;
 
 /* @author Carmina Villaflores
  * Manages the saving and retrieving of data to internal app memory
  * TODO: Allow video files to be saved to external memory
  */
+
+//TODO: Make Memory Manager a Singleton Class
 public class MemoryManager {
 
-	private static final String IMG_TAG = "3dGif";
+	private static final String DEBUG_TAG = "Memory Manager";
+	private static final String IMG_TAG = "3dgif";
 	
 
 	private Context context;
@@ -46,6 +51,18 @@ public class MemoryManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	
+	
+	public File getMovieDirectory(String name) {
+		if (isExternalStorageWritable()) {
+			return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), name);
+		} else {
+			Log.e(DEBUG_TAG, "external file could not be created");
+			return null;
+		}
+
 	}
 	
 //	public void saveImage(byte[] data) {

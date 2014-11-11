@@ -33,6 +33,16 @@
         android:text="&lt;&lt;" 
         />
    
+   <Button
+        android:id="@+id/movify_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="515dp"
+        android:text="save movie"
+        android:visibility="gone"
+        />
+   
     <GridLayout
        android:id="@+id/coord_view"
        android:layout_width="match_parent"

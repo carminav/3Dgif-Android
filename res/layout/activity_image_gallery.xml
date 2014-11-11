@@ -8,7 +8,7 @@
     <GridView
         android:id="@+id/gridview"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="fill_parent"
         android:layout_margin="5dp"
         android:columnWidth="80dp"
         android:gravity="center"
@@ -17,5 +17,15 @@
         android:drawSelectorOnTop="true"
         android:stretchMode="columnWidth" >
     </GridView>
+
+    <Button
+        android:id="@+id/viewTestGifButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="View Test Gif"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true" 
+        android:alpha="1"
+        />
 
 </RelativeLayout>
