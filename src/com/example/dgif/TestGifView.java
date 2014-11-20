@@ -10,17 +10,24 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 
 public class TestGifView extends Activity {
 
 	ImageView mView;
-	AnimationDrawable gif;
+	AnimationDrawable gif = null;
 	Bitmap[] images;
 	boolean[] mPicsSelected;
+	ArrayList<BitmapDrawable> mBitmaps;
+	
+	SeekBar mSpeedBar;
+	TextView mSpeedView;
 
 	
 	//TODO: fix out of memory error
-	private static final int DURATION = 50;
+	private static final int DEFAULT_DURATION = 50;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -29,18 +36,43 @@ public class TestGifView extends Activity {
 		
 		MemoryManager m = new MemoryManager(this);
 		
+		mSpeedBar = (SeekBar) findViewById(R.id.speedBar);
+		mSpeedView = (TextView) findViewById(R.id.speedView);
+		
+		
+		
+		mSpeedBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				mSpeedView.setText(""+progress);
+				
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				
+				setDrawable(seekBar.getProgress());
+				
+			}
+			
+		}); 
+				
+		
 		images = m.getAllImages();
 		
 		mView = (ImageView) findViewById(R.id.testGifView);
 		
 		mPicsSelected = getIntent().getExtras().getBooleanArray("picsSelected");
-		
-		gif = createGif(getSelectedImages());
-		gif.setOneShot(false);
-		
-		mView.setBackground(gif);
-		
-		gif.start();
+		mBitmaps = getSelectedImages();
+		setDrawable(DEFAULT_DURATION);
 		
 	}
 
@@ -57,19 +89,19 @@ public class TestGifView extends Activity {
 	}
 	
 	
-	private AnimationDrawable createGif(ArrayList<BitmapDrawable> frames) {
+	private AnimationDrawable createGif(ArrayList<BitmapDrawable> frames, int duration) {
 		
 		AnimationDrawable anim = new AnimationDrawable();
 		int count = frames.size();
 		
 		//forward
 		for (int i = 0; i < count; i++) {
-			anim.addFrame(frames.get(i), DURATION);
+			anim.addFrame(frames.get(i), duration);
 		}
 		
 		//reverse
 		for (int i = count - 1; i >= 0; i--) {
-			anim.addFrame(frames.get(i), DURATION);
+			anim.addFrame(frames.get(i), duration);
 		}
 		
 		return anim;
@@ -77,8 +109,22 @@ public class TestGifView extends Activity {
 	} 
 	
 	
-	
+	private void setDrawable(int speed) {
+		
+		if (gif != null && gif.isRunning()) {
+			gif.stop();
+			mView.setBackground(null);
+		}
+		
+		gif = createGif(mBitmaps, speed);
+		gif.setOneShot(false);
+		
+		mView.setBackground(gif);
+		
+		gif.start();
+	}
 
+	
 	
 	@Override
 	protected void onPause() {

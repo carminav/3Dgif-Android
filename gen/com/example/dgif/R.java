@@ -1099,14 +1099,14 @@ containing a value of this type.
         public static final int action_menu_divider=0x7f070016;
         public static final int action_menu_presenter=0x7f070017;
         public static final int action_mode_close_button=0x7f070024;
-        public static final int action_settings=0x7f07004f;
+        public static final int action_settings=0x7f070051;
         public static final int activity_chooser_view_content=0x7f070025;
         public static final int always=0x7f07000b;
         public static final int back_button=0x7f070040;
         public static final int beginning=0x7f070011;
         public static final int blinking_arrow_view=0x7f070049;
         public static final int camera_preview=0x7f07003f;
-        public static final int checkBox=0x7f07004e;
+        public static final int checkBox=0x7f070050;
         public static final int checkbox=0x7f07002d;
         public static final int collapseActionView=0x7f07000d;
         public static final int coord_view=0x7f070042;
@@ -1118,7 +1118,7 @@ containing a value of this type.
         public static final int end=0x7f070013;
         public static final int expand_activities_button=0x7f070026;
         public static final int expanded_menu=0x7f07002c;
-        public static final int gridImage=0x7f07004d;
+        public static final int gridImage=0x7f07004f;
         public static final int gridview=0x7f07003c;
         public static final int home=0x7f070014;
         public static final int homeAsUp=0x7f070005;
@@ -1151,6 +1151,8 @@ containing a value of this type.
         public static final int showCustom=0x7f070007;
         public static final int showHome=0x7f070004;
         public static final int showTitle=0x7f070006;
+        public static final int speedBar=0x7f07004d;
+        public static final int speedView=0x7f07004e;
         public static final int splash_background=0x7f07004b;
         public static final int split_action_bar=0x7f07001e;
         public static final int submit_area=0x7f070039;

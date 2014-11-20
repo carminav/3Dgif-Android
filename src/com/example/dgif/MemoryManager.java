@@ -21,7 +21,8 @@ import android.util.Log;
  * TODO: Allow video files to be saved to external memory
  */
 
-//TODO: Make Memory Manager a Singleton Class
+//TODO: Make Memory Manager a Singleton Class? But it needs a context
+//load images more efficiently
 public class MemoryManager {
 
 	private static final String DEBUG_TAG = "Memory Manager";
