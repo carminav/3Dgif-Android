@@ -1,6 +1,7 @@
 package com.example.dgif;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -24,13 +25,24 @@ public class TestGifView extends Activity {
 	Bitmap[] images;
 	boolean[] mPicsSelected;
 	ArrayList<BitmapDrawable> mBitmaps;
+
+	
 	
 	SeekBar mSpeedBar;
 	TextView mSpeedView;
+	
+	SeekBar mBlendBar;
+	TextView mBlendView;
+	
+	BitmapDrawable[] mBlends;
 
 	
 	//TODO: fix out of memory error
 	private static final int DEFAULT_DURATION = 50;
+	private static final int DEFAULT_NUM_BLENDS = 1;
+	
+	int mDuration; 
+	int mNumBlends; 
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +53,13 @@ public class TestGifView extends Activity {
 		
 		mSpeedBar = (SeekBar) findViewById(R.id.speedBar);
 		mSpeedView = (TextView) findViewById(R.id.speedView);
+		
+		mBlendBar = (SeekBar) findViewById(R.id.blendBar);
+		mBlendView = (TextView) findViewById(R.id.blendView);
+		
+		mDuration = mSpeedBar.getProgress();
+		mNumBlends = mBlendBar.getProgress();
+		
 		
 		
 		
@@ -62,11 +81,35 @@ public class TestGifView extends Activity {
 			@Override
 			public void onStopTrackingTouch(SeekBar seekBar) {
 				
-				setDrawable(seekBar.getProgress());
+				mDuration = seekBar.getProgress();
+				setDrawable(false);
 				
 			}
 			
 		}); 
+		
+		mBlendBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener(){
+
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				mBlendView.setText(""+progress);
+				
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				//do nothing
+				
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				mNumBlends = seekBar.getProgress();
+				setDrawable(true);
+			}
+			
+		});
 				
 		
 		images = m.getAllImages();
@@ -75,40 +118,78 @@ public class TestGifView extends Activity {
 		
 		mPicsSelected = getIntent().getExtras().getBooleanArray("picsSelected");
 		mBitmaps = getSelectedImages();
-		setDrawable(DEFAULT_DURATION);
+		setDrawable(true);
 		
 	}
 
 	
-	
+	//TODO: Instead of scanning all of mPicsSelected, just use array of indexes which
+	//are selected
 	private ArrayList<BitmapDrawable> getSelectedImages() {
 		ArrayList<BitmapDrawable> list = new ArrayList<BitmapDrawable>();
+		
 		for (int i = 0; i < mPicsSelected.length; i++) {
 			if (mPicsSelected[i]) {
-				list.add(new BitmapDrawable(getResources(), images[i]));
+				BitmapDrawable b = new BitmapDrawable(getResources(), images[i]);
+				list.add(b);
 			}
 		}
 		return list;
 	}
 	
 	//TODO: Run in a separate thread and/or async task
-	private AnimationDrawable createGif(ArrayList<BitmapDrawable> frames, int duration) {
+	private AnimationDrawable createGif(boolean createNewBlends) {
+		int count = mBitmaps.size();
+		
+		/* Create new blends if necessary */
+		if (createNewBlends) {
+			
+			int totalNumBlends = (count - 1) * mNumBlends;
+			mBlends =  new BitmapDrawable[totalNumBlends];
+
+			for (int i = 0; i < (count - 1); i++) {
+				Bitmap a = mBitmaps.get(i).getBitmap();
+				Bitmap b = mBitmaps.get(i + 1).getBitmap();
+				for (int j = 0; j < mNumBlends; j++) {
+					double weight = ((1 / (double)(mNumBlends + 1))) * (j + 1);
+					Bitmap bm = getIntermediateImage(a,b, weight);
+					mBlends[i + j] = new BitmapDrawable(getResources(), bm);
+				}
+			}
+		}
+		
+		
 		
 		AnimationDrawable anim = new AnimationDrawable();
-		int count = frames.size();
+		
+		
 		
 		//forward
 		for (int i = 0; i < count; i++) {
-			anim.addFrame(frames.get(i), duration);
+			anim.addFrame(mBitmaps.get(i), mDuration);
+			if (i < count - 1) {
+				for (int j = 0; j < mNumBlends; j++) {
+					anim.addFrame(mBlends[i + j], mDuration);
+				}
+			}
 		}
 		
+		
+		//TODO: Fix bug here. It crashes for certain numbers of blends
 		//reverse
 		for (int i = count - 1; i >= 0; i--) {
-			anim.addFrame(frames.get(i), duration);
+			anim.addFrame(mBitmaps.get(i), mDuration);
+			Log.d("TEST VIEW GIF", "i: " + i);
+			if (i > 0) {
+//				for (int j = mNumBlends - 1; j >= 0; j--) {
+//					anim.addFrame(mBlends[mBlends.length - ((i - 1) * (mNumBlends - j))], mDuration);
+//				}
+				for (int j = 0; j < mNumBlends; j++) {
+					anim.addFrame(mBlends[mBlends.length - j - 1], mDuration);
+				}
+			}
+			
 		}
-		
-
-		
 		
 	
 		return anim;
@@ -121,7 +202,7 @@ public class TestGifView extends Activity {
 	 * based on a weight.
 	 */
 	private static Bitmap getIntermediateImage(Bitmap a, Bitmap b, double weight) {
-		
+		Log.d("TEST GIF VIEW", "Intermediate Image Reached");
 		int height = a.getHeight();
 		int width = a.getWidth();
 		Bitmap blend = Bitmap.createBitmap(width, height, Config.ARGB_8888);
@@ -164,14 +245,14 @@ public class TestGifView extends Activity {
 	}
 	
 	
-	private void setDrawable(int speed) {
+	private void setDrawable (boolean createNewBlend) {
 		
 		if (gif != null && gif.isRunning()) {
 			gif.stop();
 			mView.setBackground(null);
 		}
 		
-		gif = createGif(mBitmaps, speed);
+		gif = createGif(createNewBlend);
 		gif.setOneShot(false);
 		
 		mView.setBackground(gif);
