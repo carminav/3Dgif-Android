@@ -12,9 +12,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
+import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.ShapeDrawable;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.Size;
@@ -26,6 +27,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -34,7 +36,10 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 
@@ -44,12 +49,15 @@ public class Preview extends Activity {
 	
 	private static final String DEBUG_TAG = "Preview";
 	
+	private boolean mOverlayMode = false;
+	
 	public final static int VIEW_WIDTH = 720;
 	public final static int VIEW_HEIGHT = 1280;
 	public final static int PIC_WIDTH = 480; //1458;
 	public final static int PIC_HEIGHT = 640; //2592;
 	public final static int VIEW_PIC_RATIO = VIEW_WIDTH / PIC_WIDTH;
 	
+	private final static String THEME_COLOR = "#7D0000";
 
 	protected static final int LOAD_CAM_PREV = 0;
 	
@@ -59,7 +67,7 @@ public class Preview extends Activity {
 	private UIHandler mHandler;
 	private FrameLayout mPreviewFrame;
 	
-	private Button mBackButton;
+	private Button mGalleryButton;
 	private Button mMovifyButton;
 	
 	private MovieEncoder mMovieEncoder;
@@ -91,7 +99,10 @@ public class Preview extends Activity {
 	
 	private ImageView mOverlayView;
 	private Bitmap mLastImage;
-
+	
+	private RelativeLayout mFrameWrapper;
+	Button mCaptureButton;
+	Button mTrashButton;
 	
 	
 	@Override
@@ -101,9 +112,15 @@ public class Preview extends Activity {
 		
 		mLastImage = null;
 		
+		mFrameWrapper = (RelativeLayout) findViewById(R.id.camera_wrapper);
+		
+	    mCaptureButton = (Button) findViewById(R.id.capture_button);
+		
 		mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
-		mBackButton = (Button) findViewById(R.id.back_button);
+		mGalleryButton = (Button) findViewById(R.id.gallery_button);
 		mMovifyButton = (Button) findViewById(R.id.movify_button);
+		
+		mTrashButton = (Button) findViewById(R.id.trash_button);
 		
 		mMovieEncoder = new MovieEncoder();
 		mMovieEncoder.saveContext(this);
@@ -137,7 +154,7 @@ public class Preview extends Activity {
 		mMotionYView = 0;
 		mMotionZView = 0;
 		
-		mBackButton.setOnClickListener(new OnClickListener() {
+		mGalleryButton.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
@@ -170,10 +187,22 @@ public class Preview extends Activity {
 		});
 		
 		
+		mTrashButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				if (mOverlayView.getVisibility() == View.VISIBLE) 
+					mOverlayView.setVisibility(View.GONE);
+				mTrashButton.setVisibility(View.GONE);
+			}
+			
+		});
 		
 		// Begin loading camera resource
 		new Thread(new LoadCameraAndPrev()).start();
 		onPauseCalled = false;
+		
+		drawHeader();
 		
 		
 	}
@@ -186,8 +215,8 @@ public class Preview extends Activity {
 		View decorView = getWindow().getDecorView();
 
 		// Hide the status bar.
-		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-		decorView.setSystemUiVisibility(uiOptions);
+		//int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+		//decorView.setSystemUiVisibility(uiOptions);
 
 		// Hide action bar
 		ActionBar actionBar = getActionBar();
@@ -197,7 +226,58 @@ public class Preview extends Activity {
         if (onPauseCalled) {
         	new Thread(new LoadCameraAndPrev()).start();
         }
+        
+        
 		
+		
+	}
+	
+	
+	private void drawHeader() {
+		
+		int color = Color.parseColor(THEME_COLOR);
+	  
+		//Get Screen Dimensions
+		Display display = getWindowManager().getDefaultDisplay();
+		Point size = new Point();
+		display.getSize(size);
+		int width = size.x;
+		int height = size.y;
+		Log.d(DEBUG_TAG, "Screen dimensions: " + width + " x " + height);
+		
+		//int headerHeight = (int) (0.07 * height);
+		int headerHeight = 41;
+		
+		//Draw Header
+		LinearLayout header = new LinearLayout(this);
+		RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, headerHeight);
+		header.setLayoutParams(p);
+		header.setOrientation(LinearLayout.HORIZONTAL);
+		header.setBackgroundColor(Color.BLACK);
+		header.setVisibility(View.VISIBLE);
+		
+		mFrameWrapper.addView(header);
+		
+		//Draw Footer
+		
+		//int footerHeight = (int) (.13 * height);
+		int footerHeight = 50;
+		RelativeLayout footer = new RelativeLayout(this);
+		
+		RelativeLayout.LayoutParams p2 = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, footerHeight);
+		//p2.setMargins(0, height - footerHeight - 50, 0, 0);
+		p2.setMargins(0, height - footerHeight - 50, 0, 0);
+		footer.setLayoutParams(p2);
+		footer.setBackgroundColor(Color.BLACK);
+		footer.setVisibility(View.VISIBLE);
+	//	footer.setTop(height - headerHeight);
+		
+		mFrameWrapper.addView(footer);
+		
+		
+		
+		
+	
 		
 	}
 
@@ -219,6 +299,10 @@ public class Preview extends Activity {
 			mOverlayView.setVisibility(View.GONE);
 		}
 		
+		if (mTrashButton.getVisibility() == View.VISIBLE) {
+			mTrashButton.setVisibility(View.GONE);
+		}
+		
 		onPauseCalled = true;
 	}
 	
@@ -232,21 +316,34 @@ public class Preview extends Activity {
 	 */
 	public void setupView() {
 		mPreview = new CamView(this, mCamera);
-		mPreviewFrame.setOnTouchListener(new View.OnTouchListener() {
-			
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				Log.i(DEBUG_TAG, "view touched");
-
-				if (mCamera != null && mIsPreviewing) {
-					mCamera.takePicture(null, null, mPictureCallback);
-				}
-
-				return false;
-			}
-		});
+		
+//		mPreviewFrame.setOnTouchListener(new View.OnTouchListener() {
+//			
+//			@Override
+//			public boolean onTouch(View v, MotionEvent event) {
+//				Log.i(DEBUG_TAG, "view touched");
+//
+//				if (mCamera != null && mIsPreviewing) {
+//					mCamera.takePicture(null, null, mPictureCallback);
+//				}
+//
+//				return false;
+//			}
+//		});
 
 		mPreviewFrame.addView(mPreview);
+		
+		mCaptureButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				if (mCamera != null && mIsPreviewing) {
+    				mCamera.takePicture(null, null, mPictureCallback);
+				}
+				
+			}
+			
+		});
 
 	}
 	
@@ -311,11 +408,11 @@ public class Preview extends Activity {
 			//Give user time to view image
 			//TODO: Change to new activity preview screen so user can choose to 
 			// retake picture or keep
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				Log.e(DEBUG_TAG, "Thread sleep failure on picture taken");
-			}
+//			try {
+//				Thread.sleep(3000);
+//			} catch (InterruptedException e) {
+//				Log.e(DEBUG_TAG, "Thread sleep failure on picture taken");
+//			}
 			
 			//save image
 			mMemoryManager.saveImage(data);
@@ -331,35 +428,42 @@ public class Preview extends Activity {
 			Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
 			
 			//resize
+			/***OLD**/
 			int cropFromBothSides = 45;
 			int newWidth = 480 - (2 * cropFromBothSides);
-			double newRatio = 720 / newWidth;
+			double newRatio = (double)720 / newWidth;
 			int newHeight = (int) (640 * newRatio);
 			
 			Bitmap croppedBM = Bitmap.createBitmap(bm, cropFromBothSides - 5, 0, newWidth, 640);
 			Log.d(DEBUG_TAG, "cropped bm: " + croppedBM.getWidth() + " x " + croppedBM.getHeight());
 			//scale
-			Bitmap scaledBM = Bitmap.createScaledBitmap(croppedBM, 720, 1100, true);
+			//Bitmap scaledBM = Bitmap.createScaledBitmap(croppedBM, 720, 1100, true);
+			Bitmap scaledBM = Bitmap.createScaledBitmap(croppedBM, 720, 1050, true);
 			
 			//set scale type
 			mOverlayView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+			/********/
 			
-			
+
 			//shift
 			//Bitmap shiftedBM = Bitmap.createBitmap(scaledBM, x, y, width, height, m, filter)
 			
 			
+			
 			//put in imageview
-			mOverlayView.setImageBitmap(scaledBM);
-			Log.d(DEBUG_TAG, "new width: " + (PIC_WIDTH * VIEW_PIC_RATIO));
-			Log.d(DEBUG_TAG, "new height: " + (PIC_HEIGHT * VIEW_PIC_RATIO));
-			Log.d(DEBUG_TAG, "scaled bm: " + scaledBM.getWidth() + " x " + scaledBM.getHeight());
+		    mOverlayView.setImageBitmap(scaledBM);
+		    mTrashButton.setVisibility(View.VISIBLE);
+		    
+		    
+		    mCaptureButton.bringToFront();
+		    mTrashButton.bringToFront();
+		    mGalleryButton.bringToFront();
 			
 		
 			
 			if (mOverlayView.getVisibility() == View.GONE) {
 				mOverlayView.setVisibility(View.VISIBLE);
-				mBackButton.bringToFront();
+				mGalleryButton.bringToFront();
 				mHeader.bringToFront();
 				
 			}
@@ -396,6 +500,7 @@ public class Preview extends Activity {
 			
 			Camera.Parameters p = mCamera.getParameters();
 			p.setPreviewSize(VIEW_HEIGHT, VIEW_WIDTH);      //Note that height and width are switched 
+			
 			p.setRotation(90);
 			
 			p.setPictureSize(PIC_HEIGHT, PIC_WIDTH);

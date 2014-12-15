@@ -3,104 +3,131 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:background="@color/black_loader"
-    android:id="@+id/preview_frame"
+    android:id="@+id/camera_wrapper"
     tools:context="com.example.dgif.Main" 
     android:windowActionBar="false"
     android:windowTitleSize="0dp"
+ 
     
     >
 
-        
-    
 
     <FrameLayout
     android:id="@+id/camera_preview"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:layout_weight="1">
+
+        
  
    </FrameLayout>
    
-   
-   
-   <Button
-        android:id="@+id/back_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="0dp"
-        android:layout_marginTop="545dp"
-        android:background="@drawable/arrow"
-        android:text="&lt;&lt;" 
-        />
-   
-   <Button
-        android:id="@+id/movify_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="0dp"
-        android:layout_marginTop="515dp"
-        android:text="save movie"
+    <Button
+            android:id="@+id/capture_button"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:background="@drawable/button_drawable" 
+            android:layout_marginTop="470dp"
+            android:layout_marginLeft="145dp"/>
+    
+    <Button
+        android:id="@+id/trash_button"
+        android:background="@drawable/ic_action_delete"
+        android:layout_alignRight="@id/camera_preview"
+        android:layout_marginTop="490dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:visibility="gone"
+        
         />
-   
-    <GridLayout
-       android:id="@+id/coord_view"
-       android:layout_width="match_parent"
-       android:layout_height="50dp"
-       android:alpha="0.60"
-       android:background="#ffffff"
-       android:columnCount="7"
-       android:rowCount="1"
-       tools:context=".GridXMLActivity" 
-       android:padding="10dp">
+    
+    
+    <Button 
+        android:id="@+id/gallery_button"
+        android:background="@drawable/ic_action_overflow"
+        android:layout_alignLeft="@id/camera_preview"
+        android:layout_marginTop="490dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"/>
 
-       <TextView
-           android:id="@+id/xcoordLabel"
-           android:layout_column="0"
-           android:text="x: " />
 
-       <TextView
-           android:id="@+id/xcoordView"
-           android:layout_column="1" 
-           android:layout_width="60dp"/>
+        <Button
+            android:id="@+id/back_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="545dp"
+            android:background="@drawable/arrow"
+            android:text="&lt;&lt;"
+            android:visibility="gone" />
 
-       <TextView
-           android:id="@+id/ycoordLabel"
-           android:layout_column="2"
-           android:text="y: " />
+        <Button
+            android:id="@+id/movify_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="515dp"
+            android:text="save movie"
+            android:visibility="gone" />
 
-       <TextView
-           android:id="@+id/ycoordView"
-           android:layout_column="3" 
-           android:layout_width="60dp"/>
+        <GridLayout
+            android:id="@+id/coord_view"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:alpha="0.60"
+            android:background="#ffffff"
+            android:columnCount="7"
+            android:padding="10dp"
+            android:rowCount="1"
+            android:visibility="gone"
+            tools:context=".GridXMLActivity" >
 
-       <TextView
-           android:id="@+id/zcoordLabel"
-           android:layout_column="4" 
-           android:text="z: " />
+            <TextView
+                android:id="@+id/xcoordLabel"
+                android:layout_column="0"
+                android:text="x: " />
 
-       <TextView
-           android:id="@+id/zcoordView"
-           android:layout_column="5"
-           android:layout_width="60dp"/>
-       
-       <ImageView
-           android:id="@+id/blinking_arrow_view"
-           android:layout_column="6"
-           android:src="@drawable/blinking_arrow_anim"
-           android:scaleType="fitCenter" 
-           android:layout_marginLeft="-15dp"
-           android:alpha="1"
-           android:visibility="gone"/>
+            <TextView
+                android:id="@+id/xcoordView"
+                android:layout_width="60dp"
+                android:layout_column="1" />
 
-   </GridLayout>
-   
-   <ImageView
-        android:id="@+id/image_overlay_view"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:alpha="0.5"
-        android:background="#ffffff"
-        android:visibility="gone" />
+            <TextView
+                android:id="@+id/ycoordLabel"
+                android:layout_column="2"
+                android:text="y: " />
+
+            <TextView
+                android:id="@+id/ycoordView"
+                android:layout_width="60dp"
+                android:layout_column="3" />
+
+            <TextView
+                android:id="@+id/zcoordLabel"
+                android:layout_column="4"
+                android:text="z: " />
+
+            <TextView
+                android:id="@+id/zcoordView"
+                android:layout_width="60dp"
+                android:layout_column="5" />
+
+            <ImageView
+                android:id="@+id/blinking_arrow_view"
+                android:layout_column="6"
+                android:layout_marginLeft="-15dp"
+                android:alpha="1"
+                android:scaleType="fitCenter"
+                android:src="@drawable/blinking_arrow_anim"
+                android:visibility="gone" />
+        </GridLayout>  
+
+        <ImageView
+            android:id="@+id/image_overlay_view"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:alpha="0.5"
+            android:background="#ffffff"
+            android:visibility="gone" />
    
 </RelativeLayout>
